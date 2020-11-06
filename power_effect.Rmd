@@ -1,0 +1,517 @@
+---
+title: "Power and effect size"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by
+placing your cursor inside it and pressing *Cmd+Shift+Enter*.
+
+## The situation
+
+I have a new cognitive treatment for depression.
+
+I randomize 60 patients into two groups of 30.  The first groups gets normal
+clinical care.  The second gets my treatment.
+
+I measure their levels of depression on the [PHQ-9
+questionnaire](https://en.wikipedia.org/wiki/PHQ-9)
+
+Here are the 30 values in each group.
+
+```{r}
+data <- read.csv('phq9_data.csv')
+data
+```
+Let's investigate with some histograms:
+
+```{r}
+hist(data$controls, breaks=10)
+```
+
+```{r}
+hist(data$treated, breaks=10)
+```
+
+Side by side:
+
+```{r}
+# Two plots side by side.
+par(mfrow=c(1,2))
+hist(data$controls, breaks=10)
+hist(data$treated, breaks=10)
+```
+
+## Some more information
+
+```{r}
+summary(data)
+```
+
+## Questions 1
+
+Do you think the treatment was effective?
+
+Why?  Or why not?  How sure are you?  How effective is it?  What other
+information would you like to see to be more sure of your answers?
+
+You can ask me to calculate anything you like...
+
+## Another trial
+
+I made a rather slight modification to my treatment program, and ran another
+trial, to get the similar data.
+
+```{r}
+data2 <- read.csv('phq9_data2.csv')
+data2
+```
+
+```{r}
+# Two plots side by side.
+par(mfrow=c(1,2))
+hist(data2$controls2)
+hist(data2$treated2)
+```
+
+```{r}
+summary(data2)
+```
+
+```{r}
+t.test(data2$controls2, data2$treated2)
+```
+
+## Questions 2
+
+Do you think treatment2 was effective?  Is it more effective than the first treatment?
+
+Why?  Or why not?  How sure are you?
+
+## Will I find anything?
+
+Now imagine I'm doing the trial again.
+
+I can only afford 20 patients per group this time (funding is tight).
+
+The treatment is relatively labour intensive, so I'm only interested to continue
+studying this treatment if it causes a 3 point drop on the PHQ9 scale.
+
+But I know, of course, that if I take some random sample of treated patients,
+when the true population effect is 3, then my mean effect in the sample will be
+a bit random.
+
+## Random sampling
+
+Let's imagine that the PHQ9 scores are roughly normally distributed, with a mean
+of 10 (now), and a standard deviation of 4.  Here's a normal distribution with mean 15
+and standard deviation 4.
+
+```{r}
+control_population <- rnorm(10000, 15, 4)
+hist(control_population)
+```
+
+If I take sample of 10 patients from this population, it might look like this:
+
+```{r}
+control_sample1 <- sample(control_population, 20)
+hist(control_sample1, breaks=10)
+```
+
+Or this:
+
+```{r}
+control_sample2 <- sample(control_population, 20)
+hist(control_sample2, breaks=10)
+```
+
+Each sample will have a slightly different mean:
+
+```{r}
+mean(control_sample1)
+mean(control_sample2)
+```
+
+Now let's imagine my treatment has worked just as I wanted, and there is a 3
+point drop in the PHQ9 score.  My new population looks like this:
+
+```{r}
+treated_population <- rnorm(10000, 12, 4)
+hist(treated_population)
+```
+```{r}
+mean(control_population) - mean(treated_population)
+```
+
+Of course random samples from this population also differ one from another:
+
+```{r}
+treated_sample1 <- sample(treated_population, 20)
+treated_sample2 <- sample(treated_population, 20)
+par(mfrow=c(1, 2))
+hist(treated_sample1, breaks=10)
+hist(treated_sample2, breaks=10)
+```
+
+Again, the means will differ:
+
+```{r}
+mean(treated_sample1)
+mean(treated_sample2)
+```
+
+Now consider my experiment, where I'm looking for a 3 point drop.   Let's
+imagine there really is a 3 point drop, as there is in the `treated_population`
+above.
+
+I'm sampling my first (control) group from the `control_population` - like this:
+
+```{r}
+controls <- sample(control_population, 20)
+```
+
+I'm sampling my second (treated) group from the `treated_population` - like
+this:
+
+```{r}
+treated <- sample(treated_population, 20)
+```
+
+I can look for a difference in means:
+
+```{r}
+mean_diff <- mean(controls) - mean(treated)
+mean_diff
+```
+
+Notice that the difference in means is not exactly 3 - because the two samples
+were random, so their means are random, and so is the difference between means.
+
+Or do a t-test:
+
+```{r}
+t.test(controls, treated)
+```
+
+## Questions 3
+
+Is 20 patients enough, in each group?  How will I decide if I have an effect?
+How likely am I to find the effect I am interested in?
+
+## Power
+
+Power is the chance that I will identify an effect.
+
+Usually we are only happy to say we have found an effect when the statistical
+test is significant.
+
+Remember that *significant* is not, on its own, very meaningful.  A significant
+test could still be a false positive.
+
+So, in our situation, what is the chance that the - say - t-test will be
+significant, if there really is a drop of 3 in the PHQ9 scale?
+
+We can do lots of simulations of our proposed experiment, to find out.
+
+```{r}
+mean_differences <- numeric(10000)
+p_values <- numeric(10000)
+for (i in 1:10000) {  # Repeat stuff between {} 10000 times.
+  # You've seen this above. We're just repeating it 10000 times.
+  controls <- sample(control_population, 20)
+  treated <- sample(treated_population, 20)
+  mean_diff <- mean(controls) - mean(treated)
+  test_result <- t.test(controls, treated)
+  # Store the results from this trial
+  mean_differences[i] <- mean_diff
+  p_values[i] <- test_result$p.value
+}
+length(mean_differences)
+```
+
+Show the mean differences:
+
+```{r}
+hist(mean_differences)
+```
+
+Here are the mean and standard deviation of the mean differences:
+
+```{r}
+mean(mean_differences)
+sd(mean_differences)
+```
+
+Some of these mean differences did not come out as significant on the t-test.
+
+```{r}
+# Select just the significant differences
+significant_diffs <- mean_differences[p_values < 0.05]
+length(significant_diffs)
+```
+
+What proportion of the tests were significant?
+
+```{r}
+# 10000 is the number of simulations.
+p_sig <- length(significant_diffs) / 10000 
+p_sig
+```
+
+I can also calculate this directly by getting the proportion of t-test
+`p_values` that were less than 0.05:
+
+```{r}
+sum(p_values < 0.05) / 10000
+```
+
+Show all differences, and the significant differences, on the same plot.
+
+```{r}
+# Don't worry about the code here.  It's just some fancy plotting commands.
+md_hist <- hist(mean_differences, plot=FALSE)
+p_hist <- hist(significant_diffs, breaks=md_hist$breaks, plot=FALSE)
+c1 <- rgb(173, 216, 230, max=255, alpha=80, names="lt.blue")
+c2 <- rgb(255, 192, 203, max=255, alpha=80, names="lt.pink")
+plot(md_hist, col=c1, main='All and significant mean differences') # Plot 1st histogram using a transparent color
+plot(p_hist, col=c2, add=TRUE) # Add 2nd histogram using different color
+```
+
+So, if we accept a p value of 0.05 as significant we have the following chance
+of getting a "significant" result, if the effect really is 3.
+
+```{r}
+p_sig
+```
+
+Which means we have the following chance of *missing* the effect (because our test was not significant).
+
+```{r}
+beta <- 1 - p_sig
+beta
+```
+
+## Questions
+
+Is it OK to have a roughly 35% chance of failing to get a significant result?
+
+What kind of percent chance of missing the result are you prepared to accept?
+
+What are the consequences of missing the result?
+
+What could we do to improve our chances of getting a significant result?
+
+What would cause us to get lower chances of a significant result?
+
+## Sample size
+
+Now let's say I can only afford 10 patients in each sample.
+
+What effect do you think this will have on our chances of getting a significant
+result, when there is an effect of 3 points, as above?
+
+```{r}
+mean_differences_10 <- numeric(10000)
+p_values_10 <- numeric(10000)
+for (i in 1:10000) {  # Repeat stuff between {} 10000 times.
+  # You've seen this above. We're just repeating it 10000 times.
+  controls <- sample(control_population, 10)  # Just 10 patients.
+  treated <- sample(treated_population, 10)  # Just 10 patients
+  mean_diff <- mean(controls) - mean(treated)
+  test_result <- t.test(controls, treated)
+  # Store the results from this trial
+  mean_differences_10[i] <- mean_diff
+  p_values_10[i] <- test_result$p.value
+}
+```
+
+Notice the spread:
+
+```{r}
+hist(mean_differences_10)
+```
+
+The standard deviation reflects the spread:
+
+```{r}
+mean(mean_differences_10)
+sd(mean_differences_10)
+```
+
+Fewer results are significant:
+
+```{r}
+significant_diffs_10 <- mean_differences_10[p_values_10 < 0.05]
+p_sig_10 <- length(significant_diffs_10) / 10000
+p_sig_10
+```
+
+Showing all mean differences with those that correspond to a significant t-test:
+
+```{r}
+# Don't worry about the code here.  It's just some fancy plotting commands.
+md_hist <- hist(mean_differences_10, plot=FALSE)
+p_hist <- hist(significant_diffs_10, breaks=md_hist$breaks, plot=FALSE)
+c1 <- rgb(173, 216, 230, max=255, alpha=80, names="lt.blue")
+c2 <- rgb(255, 192, 203, max=255, alpha=80, names="lt.pink")
+plot(md_hist, col=c1, main='All and significant mean differences; n=10')
+plot(p_hist, col=c2, add=TRUE)
+```
+
+Now you have a: 
+
+```{r}
+1 - p_sig_10
+```
+
+chance of missing a 3 point difference, if you use the 0.05 criterion to
+identify tests as positive.  Is that acceptable?  What consequences could arise?
+
+## Effect size
+
+Let us return to a single experiment, using our simulated data.
+
+```{r}
+controls <- sample(control_population, 20)
+treated <- sample(treated_population, 20)
+mean_diff <- mean(controls) - mean(treated)
+mean_diff
+```
+
+This difference is our best estimate, from the experiment, of the difference
+between the control *population* mean (which we know, in fact, was 15), and the
+*treated population* mean (which was, in fact 12).  Yes, it's a little off, but
+it's the best we can do with the data we have, if we don't have any more
+information.
+
+If we look at all the mean of all the mean differences we found in all 10000
+experiments, we see that it's very close to the right answer, of 3.
+
+```{r}
+mean(mean_differences)
+```
+
+But now consider the mean differences that we get if we only look at the
+experiments where the t-test turned out to be significant:
+
+```{r}
+# Mean of the differences, restricted to the experiments where the t-test was
+# significant.
+mean(significant_diffs)
+```
+
+Why is this estimate different from the one above?  And why is it so far off?
+
+Now imagine that you only report results when the t-test is significant.  You
+also report the *effect size*, which is the mean difference.  Why might this be
+misleading?
+
+## False positives
+
+Remember of course, that the t-test is designed to protect us from *false
+positives*.
+
+A *false positive* is where we find a significant test result, but there is in
+fact no underlying difference in the population means.
+
+Let us show the t-test at work.  This code below just compares two samples that
+are, in fact, both drawn from the same control distribution, and therefore,
+where there is no underlying
+difference in the population means.
+
+```{r}
+# Testing for differences, when there is no population difference.
+mean_differences_null <- numeric(10000)
+p_values_null <- numeric(10000)
+for (i in 1:10000) {  # Repeat stuff between {} 10000 times.
+  # You've seen this above. We're just repeating it 10000 times.
+  controls <- sample(control_population, 20)
+  treated <- sample(control_population, 20)  # From the same population
+  mean_diff <- mean(controls) - mean(treated)
+  test_result <- t.test(controls, treated)
+  # Store the results from this trial
+  mean_differences_null[i] <- mean_diff
+  p_values_null[i] <- test_result$p.value
+}
+```
+
+Notice that the mean of the mean differences is now close to zero, as it should be:
+
+```{r}
+mean(mean_differences_null)
+```
+
+
+```{r}
+hist(mean_differences_null)
+```
+
+What proportion of these differences gave a significant result?
+
+```{r}
+sum(p_values_null < 0.05) / 10000
+```
+
+Again - this is as it should be - the test gives us around 0.05 false positive
+rate, when we test for significance at threshold 0.05.
+
+## Question
+
+Let us say that I have done a t-test between two samples of 30 patients, call
+these sample A and B.  I have a p-value of 0.05.   I know that sample A was from
+the control population, but I don't know if sample B was from a population where
+the treatment does not work (and so should have the same underlying population
+as the control) or from a treatment that caused an average 3 point drop in the
+score.
+
+Given this t test value, do you think my sample B was from the population where
+the treatment worked, or where it didn't work?
+
+How sure are you?
+
+## A COVID test
+
+Let's say you've had a COVID-19 test as part of a screening, to get into a
+crowded indoor event.
+
+Your test is positive.
+
+The population incidence of COVID-19 is 0.01 or 1%.
+
+Assume the test has a false negative rate of 0.1 (10%) - of 100 people who do
+have COVID-19, 10% will get a negative test result from this test.
+
+The test has an 0.08 positive rate (8%). This means that, of 100 people who do
+*not* have COVID-19, 8% will have a positive test result from this test.
+
+## Question
+
+What are the chances that you actually have COVID-19?
+
+In case this number is useful to you:
+
+```{r}
+0.99 * 0.08
+```
+
+## Back to the false positive / false negative question
+
+Remember sample B and the significant t-test?
+
+We give a name to the situation where sample B corresponds to an ineffective
+treatment, so the population from which sample B was drawn has the exact same
+mean score as the control sample.  Call this situation *B-* (B is negative).
+
+Call the situation where sample B corresponds to a treatment causing an average
+3 point drop in scores - *B+* (B is positive).
+
+Call the situation where we have a significant statistical test *T+* (the test
+is positive).
+
+## Question
+
+Returning to the question above - given that we have a positive statistical test
+(situation T+), what is the chance that sample B really comes from an effective
+treatment group (B+)?  What information do we need in order to decide?
