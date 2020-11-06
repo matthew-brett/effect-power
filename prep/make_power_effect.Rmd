@@ -32,12 +32,12 @@ res
 ```{r}
 # Write to CSV.
 df <- data.frame(controls=controls, treated=treated)
-write.csv(df, 'phq9_data.csv', row.names=FALSE)
+write.csv(df, '../phq9_data.csv', row.names=FALSE)
 ```
 
 ```{r}
 # Check by reading back.
-read.csv('phq9_data.csv')
+read.csv('../phq9_data.csv')
 ```
 
 ```{r}
@@ -59,10 +59,10 @@ res
 ```{r}
 # Write to CSV.
 df_sig <- data.frame(controls2=controls2, treated2=treated2)
-write.csv(df_sig, 'phq9_data2.csv', row.names=FALSE)
+write.csv(df_sig, '../phq9_data2.csv', row.names=FALSE)
 ```
 
 ```{r}
 # Check by reading back.
-read.csv('phq9_data2.csv')
+read.csv('../phq9_data2.csv')
 ```
