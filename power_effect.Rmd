@@ -12,13 +12,13 @@ placing your cursor inside it and pressing *Cmd+Shift+Enter*.
 
 I have a new cognitive treatment for depression.
 
-I randomize 60 patients into two groups of 30.  The first groups gets normal
+I randomize 200 patients into two groups of 100.  The first groups gets normal
 clinical care.  The second gets my treatment.
 
 I measure their levels of depression on the [PHQ-9
 questionnaire](https://en.wikipedia.org/wiki/PHQ-9)
 
-Here are the 30 values in each group.
+Here are the 100 values in each group.
 
 ```{r}
 data <- read.csv('phq9_data.csv')
@@ -49,7 +49,7 @@ hist(data$treated, breaks=10)
 summary(data)
 ```
 
-## Questions 1
+## Questions
 
 Do you think the treatment was effective?
 
@@ -58,10 +58,16 @@ information would you like to see to be more sure of your answers?
 
 You can ask me to calculate anything you like...
 
+## You asked for...
+
+```{r}
+t.test(data$controls, data$treated)
+```
+
 ## Another trial
 
 I made a rather slight modification to my treatment program, and ran another
-trial, to get the similar data.
+trial, to get similar data.
 
 ```{r}
 data2 <- read.csv('phq9_data2.csv')
@@ -83,9 +89,10 @@ summary(data2)
 t.test(data2$controls2, data2$treated2)
 ```
 
-## Questions 2
+## Questions
 
-Do you think treatment2 was effective?  Is it more effective than the first treatment?
+Do you think treatment2 was effective?  Is it more effective than the first
+treatment?
 
 Why?  Or why not?  How sure are you?
 
@@ -95,25 +102,26 @@ Now imagine I'm doing the trial again.
 
 I can only afford 20 patients per group this time (funding is tight).
 
-The treatment is relatively labour intensive, so I'm only interested to continue
-studying this treatment if it causes a 3 point drop on the PHQ9 scale.
+The treatment is relatively labour intensive, so I'm only interested to
+continue studying this treatment if it causes a 3 point drop on the PHQ9
+scale.
 
 But I know, of course, that if I take some random sample of treated patients,
-when the true population effect is 3, then my mean effect in the sample will be
-a bit random.
+when the true population effect is 3, then my mean effect in the sample will
+be a bit random.
 
 ## Random sampling
 
 Let's imagine that the PHQ9 scores are roughly normally distributed, with a
-mean of 10 (now), and a standard deviation of 4.  Here's a normal distribution
-with mean 15 and standard deviation 4.
+mean of 15, and a standard deviation of 4.  Here's a normal distribution with
+mean 15 and standard deviation 4.
 
 ```{r}
 control_population <- rnorm(10000, 15, 4)
 hist(control_population)
 ```
 
-If I take sample of 10 patients from this population, it might look like this:
+If I take sample of 20 patients from this population, it might look like this:
 
 ```{r}
 control_sample1 <- sample(control_population, 20)
@@ -141,9 +149,6 @@ point drop in the PHQ9 score.  My new population looks like this:
 treated_population <- rnorm(10000, 12, 4)
 hist(treated_population)
 ```
-```{r}
-mean(control_population) - mean(treated_population)
-```
 
 Of course random samples from this population also differ one from another:
 
@@ -155,7 +160,8 @@ hist(treated_sample1, breaks=10)
 hist(treated_sample2, breaks=10)
 ```
 
-Again, the means will differ:
+Again, the means of the samples will differ, because of random sampling, even
+though both samples came from the same population:
 
 ```{r}
 mean(treated_sample1)
@@ -163,10 +169,11 @@ mean(treated_sample2)
 ```
 
 Now consider my experiment, where I'm looking for a 3 point drop.   Let's
-imagine there really is a 3 point drop, as there is in the `treated_population`
-above.
+imagine there really is a 3 point drop, as there is in the
+`treated_population` above.
 
-I'm sampling my first (control) group from the `control_population` - like this:
+I'm sampling my first (control) group from the `control_population` - like
+this:
 
 ```{r}
 controls <- sample(control_population, 20)
@@ -187,7 +194,8 @@ mean_diff
 ```
 
 Notice that the difference in means is not exactly 3 - because the two samples
-were random, so their means are random, and so is the difference between means.
+were somewhat random, so their means are somewhat random, and so is the
+difference between means.
 
 Or do a t-test:
 
@@ -195,7 +203,7 @@ Or do a t-test:
 t.test(controls, treated)
 ```
 
-## Questions 3
+## Questions
 
 Is 20 patients enough, in each group?  How will I decide if I have an effect?
 How likely am I to find the effect I am interested in?
@@ -207,10 +215,12 @@ Our t-test is designed to protect us from *false positives*.
 A *false positive* is where we find a significant test result, but there is in
 fact no underlying difference in the population means.
 
-In our case, imagine that the treatment was completely ineffective.  In that case the control sample and the treatment sample would in fact come from the same population, of patients who had (effectively) had no treatment.
+In our case, imagine that the treatment was completely ineffective.  In that
+case the control sample and the treatment sample would in fact come from the
+same population, of patients who had (effectively) had no treatment.
 
-The t-test helps us avoid concluding that there is a difference, in this case,
-where there is, in fact, no difference.  It helps us avoid false positives.
+The t-test helps us avoid concluding that there is a difference, where there
+is, in fact, no difference.  It helps us avoid *false positives*.
 
 Let us show the t-test at work.  This code below just compares two samples
 that are, in fact, both drawn from the same control distribution, and
@@ -223,7 +233,7 @@ Remember that *significant* is not, on its own, very meaningful.  A
 significant test could still be a false positive.
 
 So, in our situation, what is the chance that the - say - t-test will be
-significant, if there really is no change in the *population* PHQ9 scores.
+significant, if there really is no change in the *population* PHQ9 scores?
 
 We can do lots of simulations of our proposed experiment, to find out.
 
@@ -248,7 +258,8 @@ for (i in 1:10000) {  # Repeat stuff between {} 10000 times.
 }
 ```
 
-Here are the mean and standard deviation of the mean differences:
+Here are the mean and standard deviation of the mean differences we found when
+we took two random samples *from the same population* (above).
 
 ```{r}
 mean(mean_differences_null)
@@ -263,7 +274,7 @@ mean.
 hist(mean_differences_null)
 ```
 
-Some of these mean differences did not come out as significant on the t-test.
+Many of these mean differences did not come out as significant on the t-test.
 
 ```{r}
 # Select just the mean differences where the p values was < 0.05
@@ -281,21 +292,29 @@ n_sig_null / 10000
 
 ## Question
 
-Why are 5% of the tests here significant, when we know that there was in fact no difference between the populations (because they were the same)?
+Why are 5% of the tests here significant, when we know that there was in fact
+no difference between the populations (because they were the same)?
 
 ## Power
 
-Now consider the case where the treatment does in fact cause an average 3 point drop in the PHQ9 scale.  That is, if we could get the population of all patients treated with this condition, we would find that their PHQ9 values had dropped, on average, by 3 points.
+Now consider the case where the treatment does in fact cause an average 3
+point drop in the PHQ9 scale.  That is, if we could get the population of all
+patients treated with this condition, we would find that their PHQ9 values had
+dropped, on average, by 3 points.
 
-Power is the chance that I will identify an effect.  In this case, it is the chance I will identify this effect - of the 3 point drop.
+Power is the chance that I will identify an effect.  In this case, it is the
+chance I will identify this effect - of the 3 point drop.
 
 As we saw, usually we are only happy to say we have found an effect when the
 statistical test is significant.
 
 So, in our situation, what is the chance that the - say - t-test will be
-significant, if there *really is* a drop of 3 in the PHQ9 scale, in the treated population?
+significant, if there *really is* a drop of 3 in the PHQ9 scale, in the
+treated population?
 
-We can do more simulations of our proposed experiment, to find out.  We sample from the control population (as before), but we also sample from the treated population, with the average 3 point drop.
+We can do more simulations of our proposed experiment, to find out.  We sample
+from the control population (as before), but we also sample from the treated
+population, with the average 3 point drop.
 
 ```{r}
 mean_differences_3 <- numeric(10000)
@@ -364,7 +383,8 @@ of getting a "significant" result, if the effect really is 3.
 p_sig_3
 ```
 
-Which means we have the following chance of *missing* the effect (because our test was not significant).
+Which means we have the following chance of *missing* the effect (because our
+test was not significant).
 
 ```{r}
 # Chances that we will miss an effect when it is there in the population.
@@ -388,8 +408,8 @@ What would cause us to get lower chances of a significant result?
 
 Now let's say I can only afford 10 patients in each sample.
 
-What effect do you think this will have on our chances of getting a significant
-result, when there is an effect of 3 points, as above?
+What effect do you think this will have on our chances of getting a
+significant result, when there is an effect of 3 points, as above?
 
 ```{r}
 mean_differences_10 <- numeric(10000)
@@ -427,7 +447,8 @@ p_sig_10 <- length(significant_diffs_10) / 10000
 p_sig_10
 ```
 
-Showing all mean differences with those that correspond to a significant t-test:
+Showing all mean differences with those that correspond to a significant
+t-test:
 
 ```{r}
 # Plotting again.
@@ -437,7 +458,8 @@ plot(md_hist, col=lt_blue, main='All and significant mean differences; n=10')
 plot(p_hist, col=lt_pink, add=TRUE)
 ```
 
-Now you have a:
+Now you have a greater chance of missing a 3 point difference, if you use the
+0.05 criterion to identify tests as positive.
 
 ```{r}
 # Chance of missing
@@ -445,13 +467,13 @@ beta_n10 <- 1 - p_sig_10
 beta_n10
 ```
 
-chance of missing a 3 point difference, if you use the 0.05 criterion to
-identify tests as positive.  Is that acceptable?  What consequences could
-arise?
+Is that greater chance of missing the effect - acceptable?  What consequences
+could there be for missing the effect?
 
 ## Effect size
 
-Let us return to a single experiment, using our simulated data.
+Let us return to a single experiment, using our simulated data.  Again we take
+a sample of 20 patients from each group.
 
 ```{r}
 controls <- sample(control_population, 20)
@@ -460,13 +482,13 @@ mean_diff <- mean(controls) - mean(treated)
 mean_diff
 ```
 
-This difference is our best estimate, from the experiment, of the difference
-between the control *population* mean (which we know, in fact, was 15), and
-the *treated population* mean (which was, in fact 12).  Yes, it's a little
-off, because it is somewhat random, but it's the best we can do with the data
-we have.
+This difference that we see from our samples is our best estimate, from the
+experiment, of the difference between the control *population* mean (which we
+know, in fact, was 15), and the *treated population* mean (which was, in fact
+12).  Yes, it's a little off, because it is somewhat random, but it's the best
+we can do with the data we have.
 
-If we look at all the mean of all the mean differences we found in all 10000
+If we look at the mean of all the mean differences we found in all 10000
 experiments, we see that it's very close to the right answer, of 3.
 
 ```{r}
